@@ -9,20 +9,15 @@ This program is free software: you can redistribute it and/or modify it under th
 This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-version 1.0, March 14, 2018
+version 0.10, March 17, 2018
 
-- using FFTW as of version 1.0
-
-TODO: should make methods for flushing ALL buffers, with careful checks on nonOverlap to see if numParts>0
+- using FFTW as of version 0.10
 
 */
 
 #include "m_pd.h"
 #include "fftw3.h"
 #include <math.h>
-#ifndef M_PI
-#define M_PI 3.1415926535897932384626433832795
-#endif
 #define MINWIN 64
 #define DEFAULTWIN 2048
 
@@ -436,7 +431,7 @@ static void *convolve_tilde_new(t_symbol *s, int argc, t_atom *argv)
  	for(i=0; i<(x->x_window+1); i++)
  		x->x_eqArray[i] = 1.0; 		
 
-    post("%s: version 1.0", x->x_objSymbol->s_name);
+    post("%s: version 0.10", x->x_objSymbol->s_name);
     post("%s: partition size %i", x->x_objSymbol->s_name, x->x_window);
 
     return(x);

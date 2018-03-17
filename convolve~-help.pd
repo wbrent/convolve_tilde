@@ -56,7 +56,7 @@
 #X obj 158 246 env~;
 #X floatatom 158 267 5 0 0 1 dB - -, f 5;
 #X obj 224 348 hsl 128 15 0 100 0 0 \$0-master-volume \$0-master-volume-set
-master-volume 8 8 0 12 -228856 -1 -1 8300 1;
+master-volume 8 8 0 12 -228856 -1 -1 0 1;
 #X obj 481 37 cnv 15 400 220 empty empty empty 20 12 0 14 -233017 -66577
 0;
 #X obj 481 352 cnv 15 220 220 empty empty empty 20 12 0 14 -233017
@@ -64,7 +64,7 @@ master-volume 8 8 0 12 -228856 -1 -1 8300 1;
 #X text 490 360 Try these different IRs;
 #X floatatom 361 328 5 0 0 0 - #0-wet-volume -, f 5;
 #X obj 224 328 hsl 128 15 0 100 0 0 \$0-wet-volume \$0-wet-volume-set
-wet-volume 8 8 0 12 -228856 -1 -1 12700 1;
+wet-volume 8 8 0 12 -228856 -1 -1 0 1;
 #X floatatom 361 308 5 0 0 0 - #0-dry-volume -, f 5;
 #X obj 224 308 hsl 128 15 0 100 0 0 \$0-dry-volume \$0-dry-volume-set
 dry-volume 8 8 0 12 -228856 -1 -1 0 1;
@@ -129,7 +129,6 @@ dry-volume 8 8 0 12 -228856 -1 -1 0 1;
 #X obj 159 158 r \$0-convolve;
 #X obj 513 548 s \$0-convolve;
 #X text 479 313 William Brent \, March 2018;
-#X text 479 293 [convolve~] version 1.o;
 #X obj 4 4 cnv 10 400 10 empty empty empty 20 12 0 14 -233017 -66577
 0;
 #X obj 4 4 cnv 10 10 400 empty empty empty 20 12 0 14 -233017 -66577
@@ -272,13 +271,6 @@ array and the 24-band-eq array to 1 as well., f 50;
 #X array \$0-24-band-eq 24 float 2;
 #X coords 0 1.25 24 0 355 64 1 0 0;
 #X restore 42 54 graph;
-#X text 39 189 As of version 1.o \, you can scale the complex frequency-domain
-values of the partitioned IR analysis via an "eq" message. This allows
-you to boost or attenuate energy in any frequency bin. The "eq" method
-expects a list of numbers that is one larger than the current partition
-size. Since that's usually hundreds of numbers \, it's best to store
-the eq scalars in a table and dump the data into a list using [array
-get]., f 67;
 #X text 39 288 Here \, things are complicated further to make a more
 user-friendly interface. The 24-band-eq array above is used to control
 the eq scalars for all bins within each of 24 bands according to the
@@ -288,12 +280,18 @@ for more details., f 67;
 but there is no upper limit for scalars. Also note that you can get
 distortion if the data in the eq-scalars table has large discontinuities.
 , f 67;
+#X text 39 189 As of version 0.1o \, you can scale the complex frequency-domain
+values of the partitioned IR analysis via an "eq" message. This allows
+you to boost or attenuate energy in any frequency bin. The "eq" method
+expects a list of numbers that is one larger than the current partition
+size. Since that's usually hundreds of numbers \, it's best to store
+the eq scalars in a table and dump the data into a list using [array
+get]., f 67;
 #X connect 3 0 1 1;
 #X connect 4 0 1 0;
 #X coords 0 -1 1 1 380 120 1 30 10;
 #X restore 34 452 pd 24-band-gain-scalars;
 #X msg 110 40 open ../doc/sound/voice.wav \, start;
-#X text 32 430 Version 1.o has a new "eq" method;
 #X obj 301 224 cnv 15 150 60 empty empty empty 20 12 0 14 -233017 -66577
 0;
 #X text 310 232 Other messages;
@@ -341,33 +339,35 @@ size on the fly \, although audio will be interrupted.;
 #X obj 139 208 convolve~ 640;
 #X obj 34 351 dac~;
 #X obj 34 34 adc~;
+#X text 32 430 Version 0.1o has a new "eq" method;
+#X text 479 293 [convolve~] version 0.1o;
 #X connect 2 0 5 1;
-#X connect 2 1 34 0;
+#X connect 2 1 33 0;
 #X connect 3 0 2 0;
 #X connect 4 0 5 0;
 #X connect 5 0 17 0;
-#X connect 5 0 59 0;
+#X connect 5 0 57 0;
 #X connect 6 0 4 1;
 #X connect 7 0 8 0;
-#X connect 17 0 60 0;
-#X connect 17 0 60 1;
-#X connect 19 0 59 0;
-#X connect 27 0 26 0;
-#X connect 28 0 26 0;
-#X connect 34 0 2 0;
-#X connect 42 0 43 0;
-#X connect 43 0 44 0;
+#X connect 17 0 58 0;
+#X connect 17 0 58 1;
+#X connect 19 0 57 0;
+#X connect 26 0 25 0;
+#X connect 27 0 25 0;
+#X connect 33 0 2 0;
+#X connect 40 0 41 0;
+#X connect 41 0 42 0;
+#X connect 42 0 20 0;
+#X connect 43 0 20 0;
 #X connect 44 0 20 0;
 #X connect 45 0 20 0;
-#X connect 46 0 20 0;
-#X connect 47 0 20 0;
+#X connect 50 0 51 0;
+#X connect 51 0 43 0;
 #X connect 52 0 53 0;
-#X connect 53 0 45 0;
+#X connect 53 0 44 0;
 #X connect 54 0 55 0;
-#X connect 55 0 46 0;
-#X connect 56 0 57 0;
-#X connect 57 0 47 0;
-#X connect 58 0 26 0;
-#X connect 59 0 7 0;
-#X connect 59 0 17 1;
-#X connect 61 0 4 0;
+#X connect 55 0 45 0;
+#X connect 56 0 25 0;
+#X connect 57 0 7 0;
+#X connect 57 0 17 1;
+#X connect 59 0 4 0;
