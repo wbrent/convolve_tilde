@@ -1,0 +1,34 @@
+As of version 0.10, [convolve~] requires FFTW 3.3.5 or greater, available at http://www.fftw.org.
+
+FFTW is included pre-compiled with convolve~'s Windows binary package available through deken. It's fine to simply leave libfftw3f-3.dll in the convolve~ directory for use as a shared library. For Linux and Macintosh, FFTW is statically linked with the convolve~ binary file, so there is no need for compiling or obtaining FFTW.
+
+If you are compliling FFTW yourself, it must be compiled in single precision for use with convolve~. To do so in Linux, configure FFTW like this:
+
+./configure CFLAGS="-fPIC" --enable-float
+
+and like this on a Macintosh:
+
+./configure CFLAGS="-arch i386 -arch x86_64" --enable-float
+
+and like this on a Raspberry Pi:
+
+./configure --enable-float --enable-neon
+
+Then run:
+
+make
+sudo make install
+
+On Linux and Macintosh, the FFTW library files should be installed to /usr/local/lib by default. Once FFTW is properly built and installed, you can make convolve~ using the included Makefile by running:
+
+make
+
+You must specify the location of your Pure Data source code directory in the Makefile beforehand. Compilation from source on Windows can be done with the same Makefile if you use MinGW: http://www.mingw.org
+
+On Linux and Macintosh, convolve~ will statically link the FFTW library. On Windows, you will either have to set up an environment variable to point to the location of libfftw3f-3.dll, or simply put libfftw3f-3.dll directly in the convolve~ directory.
+
+The FFTW library for Windows is available precompiled at:
+
+http://www.fftw.org/install/windows.html
+
+You will need the 32-bit version, and the single precision version specifically. The provided zip file contains several compiled versions of FFTW, but only libfftw3f-3.dll is required for convolve~ version 0.10.
