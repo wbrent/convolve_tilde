@@ -1,4 +1,4 @@
-#N canvas 247 145 993 613 10;
+#N canvas 247 145 1030 663 10;
 #N canvas 641 50 703 396 init 0;
 #X obj 246 318 soundfiler;
 #X msg 357 133 \; \$1-dry-volume-set 0 \; \$1-wet-volume-set 0 \; \$1-master-volume-set
@@ -22,8 +22,7 @@
 #X obj 246 159 f \$0;
 #X obj 246 180 t f f f f;
 #X obj 246 48 t b b b;
-#X msg 407 58 \; \$1-24-band-eq const 1 \; \$1-eq-scalars const 1 \;
-;
+#X msg 407 58 \; \$1-24-band-eq const 1 \;;
 #X connect 2 0 1 0;
 #X connect 3 0 19 0;
 #X connect 4 0 7 0;
@@ -56,7 +55,7 @@
 #X obj 158 246 env~;
 #X floatatom 158 267 5 0 0 1 dB - -, f 5;
 #X obj 224 348 hsl 128 15 0 100 0 0 \$0-master-volume \$0-master-volume-set
-master-volume 8 8 0 12 -228856 -1 -1 0 1;
+master-volume 8 8 0 12 -228856 -1 -1 4300 1;
 #X obj 481 37 cnv 15 400 220 empty empty empty 20 12 0 14 -233017 -66577
 0;
 #X obj 481 352 cnv 15 220 220 empty empty empty 20 12 0 14 -233017
@@ -64,7 +63,7 @@ master-volume 8 8 0 12 -228856 -1 -1 0 1;
 #X text 490 360 Try these different IRs;
 #X floatatom 361 328 5 0 0 0 - #0-wet-volume -, f 5;
 #X obj 224 328 hsl 128 15 0 100 0 0 \$0-wet-volume \$0-wet-volume-set
-wet-volume 8 8 0 12 -228856 -1 -1 0 1;
+wet-volume 8 8 0 12 -228856 -1 -1 12700 1;
 #X floatatom 361 308 5 0 0 0 - #0-dry-volume -, f 5;
 #X obj 224 308 hsl 128 15 0 100 0 0 \$0-dry-volume \$0-dry-volume-set
 dry-volume 8 8 0 12 -228856 -1 -1 0 1;
@@ -128,7 +127,7 @@ dry-volume 8 8 0 12 -228856 -1 -1 0 1;
 #X restore 731 280 pd cpu-meter;
 #X obj 159 158 r \$0-convolve;
 #X obj 513 548 s \$0-convolve;
-#X text 479 313 William Brent \, March 2018;
+#X text 834 624 William Brent \, March 2018;
 #X obj 4 4 cnv 10 400 10 empty empty empty 20 12 0 14 -233017 -66577
 0;
 #X obj 4 4 cnv 10 10 400 empty empty empty 20 12 0 14 -233017 -66577
@@ -198,7 +197,6 @@ size: 64 samples (1.4512ms @ 44100Hz).;
 #X obj 29 139 list prepend eq;
 #X obj 29 160 list trim;
 #X obj 29 181 s \$0-convolve;
-#X obj 29 118 array get \$0-eq-scalars;
 #N canvas 698 262 459 234 load-bark-bounds 0;
 #X obj 28 54 f \$0;
 #X msg 28 75 \; \$1-bark-bounds 0 0 100.464 203.724 312.657 430.295
@@ -210,60 +208,73 @@ size: 64 samples (1.4512ms @ 44100Hz).;
 #X connect 2 0 0 0;
 #X restore 228 108 pd load-bark-bounds;
 #X obj 228 128 table \$0-bark-bounds 25;
-#X obj 29 32 r \$0-send-eq-list;
 #X obj 451 158 metro 100;
 #X obj 451 179 s \$0-update-eq;
-#X text 30 224 Here \, we dump the eq-scalar values out of the table
+#X obj 451 116 r \$0-lb4;
+#X obj 29 82 r \$0-send-eq-list;
+#X obj 29 118 array get \$0-bin-scalars;
+#X text 30 224 Here \, we dump the bin-scalar values out of the table
 and send them to [convolve~] as an "eq" message. Since working in linear
 frequency bins isn't very intuitive \, we'll use the Bark frequency
 scale to define 24 frequency bands and have each of the values in the
-24-band-eq table control a whole range of bins. The bandEqWriter.pd
+24-band-eq table control a whole range of bin scalars. The bandEqWriter.pd
 abstraction does this job., f 81;
-#X obj 451 116 r \$0-lb4;
-#X obj 228 68 clone ./lib/bandEqWriter 24 \$0 44100 1280;
+#X obj 228 68 clone ./lib/bandEqWriter 24 \$0 44100 4096;
 #X connect 0 0 1 0;
 #X connect 1 0 2 0;
-#X connect 3 0 0 0;
-#X connect 6 0 3 0;
-#X connect 7 0 8 0;
-#X connect 10 0 7 0;
+#X connect 5 0 6 0;
+#X connect 7 0 5 0;
+#X connect 8 0 9 0;
+#X connect 9 0 0 0;
 #X restore 41 159 pd write-bands-to-scalar-array;
-#N canvas 612 404 685 397 eq-table-resizing 0;
-#X obj 326 142 pack f \$0;
-#X obj 276 50 route window;
-#X obj 276 92 t b f;
-#X obj 276 29 r \$0-convolve;
-#X obj 276 71 + 1;
-#X obj 147 48 inlet;
-#X obj 68 164 inlet;
-#X msg 68 329 \; \$1-24-band-eq const 0 \;;
-#X obj 68 309 f \$0;
-#X msg 147 263 \; \$1-24-band-eq const 1 \;;
-#X obj 147 243 f \$0;
-#X msg 326 163 \; \$2-eq-scalars resize \$1 \; \$2-eq-scalars const
-1 \;;
-#X text 374 26 When window size changes \, the size of the eq-scalars
-array needs to change too. Because of internal zero padding \, the
-analysis window size is actually double the partition size. For a requested
-window size of N \, the actual analysis window size is N*2 \, and there
-are N+1 frequency bins for frequencies 0 through Nyquist. So we need
-N+1 eq scalars., f 49;
-#X text 314 224 Internally \, [convolve~]'s eq scalars are set back
-to 1 on every window size change \, so we should reset the eq-scalars
+#N canvas 548 198 721 545 eq-table-resizing 0;
+#X obj 308 219 t b f;
+#X obj 308 31 r \$0-convolve;
+#X obj 137 78 inlet;
+#X obj 58 194 inlet;
+#X msg 58 359 \; \$1-24-band-eq const 0 \;;
+#X obj 58 339 f \$0;
+#X msg 137 293 \; \$1-24-band-eq const 1 \;;
+#X obj 137 273 f \$0;
+#X obj 308 52 route analyze;
+#X obj 308 103 array size;
+#X obj 308 73 t b a;
+#X obj 365 73 symbol;
+#X obj 308 154 / 2;
+#X obj 308 175 i;
+#X obj 308 196 + 1;
+#X obj 308 124 t f f;
+#X msg 364 321 \; \$3-bin-scalars resize \$1 \; \$3-bin-scalars const
+1 \; \$3-IR-numSamps \$2 \;;
+#X obj 364 300 pack f f \$0;
+#X text 378 140 When a new IR is analyzed \, the size of the bin-scalars
+array needs to change too. The analysis window size for the EQ's FFT
+filtering is the length of the entire IR signal array. That means we
+need half that plus 1 to refer to FFT bins 0 through Nyquist., f 49
+;
+#X text 310 396 Internally \, [convolve~]'s bin scalars are set back
+to 1 on every new IR analysis \, so we should reset the bin-scalars
 array and the 24-band-eq array to 1 as well., f 50;
-#X connect 0 0 11 0;
-#X connect 1 0 4 0;
-#X connect 2 0 10 0;
-#X connect 2 1 0 0;
-#X connect 3 0 1 0;
-#X connect 4 0 2 0;
-#X connect 5 0 10 0;
-#X connect 6 0 8 0;
-#X connect 8 0 7 0;
+#X connect 0 0 7 0;
+#X connect 0 1 17 0;
+#X connect 1 0 8 0;
+#X connect 2 0 7 0;
+#X connect 3 0 5 0;
+#X connect 5 0 4 0;
+#X connect 7 0 6 0;
+#X connect 8 0 10 0;
+#X connect 9 0 15 0;
 #X connect 10 0 9 0;
+#X connect 10 1 11 0;
+#X connect 11 0 9 1;
+#X connect 12 0 13 0;
+#X connect 13 0 14 0;
+#X connect 14 0 0 0;
+#X connect 15 0 12 0;
+#X connect 15 1 17 1;
+#X connect 17 0 16 0;
 #X restore 279 139 pd eq-table-resizing;
-#X obj 279 159 table \$0-eq-scalars 641;
-#X obj 345 17 bng 15 250 50 0 empty empty unity 17 7 0 10 -262144 -1
+#X obj 345 17 bng 15 250 50 0 empty empty unity 17 7 0 12 -262144 -1
 -1;
 #X obj 275 17 bng 15 250 50 0 empty empty mute 17 7 0 12 -262144 -1
 -1;
@@ -271,24 +282,25 @@ array and the 24-band-eq array to 1 as well., f 50;
 #X array \$0-24-band-eq 24 float 2;
 #X coords 0 1.25 24 0 355 64 1 0 0;
 #X restore 42 54 graph;
-#X text 39 288 Here \, things are complicated further to make a more
+#X obj 175 17 bng 15 250 50 0 \$0-send-eq-list empty send 17 7 0 12
+-262144 -1 -1;
+#X text 39 282 Here \, things are a bit complicated to make a more
 user-friendly interface. The 24-band-eq array above is used to control
-the eq scalars for all bins within each of 24 bands according to the
+the bin scalars for all bins within each of 24 bands according to the
 Bark scale. See inside the [pd write-bands-to-scalar-array] subpatch
 for more details., f 67;
 #X text 39 358 Note that scalar values below 0 are clipped to 0 \,
-but there is no upper limit for scalars. Also note that you can get
-distortion if the data in the eq-scalars table has large discontinuities.
-, f 67;
-#X text 39 189 As of version 0.1o \, you can scale the complex frequency-domain
+but there is no upper limit for scalars., f 67;
+#X obj 279 159 table \$0-bin-scalars;
+#X text 39 189 As of version 0.11 \, you can scale the complex frequency-domain
 values of the partitioned IR analysis via an "eq" message. This allows
 you to boost or attenuate energy in any frequency bin. The "eq" method
-expects a list of numbers that is one larger than the current partition
-size. Since that's usually hundreds of numbers \, it's best to store
-the eq scalars in a table and dump the data into a list using [array
-get]., f 67;
-#X connect 3 0 1 1;
-#X connect 4 0 1 0;
+expects a list of numbers that is one larger than half the number of
+samples in your IR signal array. Since that's usually thousands of
+numbers \, it's best to store the bin scalars in a table and dump the
+data into a list using [array get]., f 67;
+#X connect 2 0 1 1;
+#X connect 3 0 1 0;
 #X coords 0 -1 1 1 380 120 1 30 10;
 #X restore 34 452 pd 24-band-gain-scalars;
 #X msg 110 40 open ../doc/sound/voice.wav \, start;
@@ -336,22 +348,27 @@ size on the fly \, although audio will be interrupted.;
 -1 -1;
 #X obj 513 503 f \$0;
 #X msg 753 443 window 320;
-#X obj 139 208 convolve~ 640;
+#X text 32 577 While the "eq" message itself is simple \, this implementation
+of a 24-band EQ table that generates an "eq" message isn't. Investigate
+the subpatch for more info.;
+#X text 834 604 [convolve~] version 0.11;
+#X text 32 420 Version 0.11 has a new "eq" method. Use the 24-band
+EQ table here and click "send" to send an "eq" message to [convolve~]
+;
 #X obj 34 351 dac~;
 #X obj 34 34 adc~;
-#X text 32 430 Version 0.1o has a new "eq" method;
-#X text 479 293 [convolve~] version 0.1o;
+#X obj 139 208 convolve~ 640;
 #X connect 2 0 5 1;
 #X connect 2 1 33 0;
 #X connect 3 0 2 0;
 #X connect 4 0 5 0;
 #X connect 5 0 17 0;
-#X connect 5 0 57 0;
+#X connect 5 0 62 0;
 #X connect 6 0 4 1;
 #X connect 7 0 8 0;
-#X connect 17 0 58 0;
-#X connect 17 0 58 1;
-#X connect 19 0 57 0;
+#X connect 17 0 60 0;
+#X connect 17 0 60 1;
+#X connect 19 0 62 0;
 #X connect 26 0 25 0;
 #X connect 27 0 25 0;
 #X connect 33 0 2 0;
@@ -368,6 +385,6 @@ size on the fly \, although audio will be interrupted.;
 #X connect 54 0 55 0;
 #X connect 55 0 45 0;
 #X connect 56 0 25 0;
-#X connect 57 0 7 0;
-#X connect 57 0 17 1;
-#X connect 59 0 4 0;
+#X connect 61 0 4 0;
+#X connect 62 0 7 0;
+#X connect 62 0 17 1;
