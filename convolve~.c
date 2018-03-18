@@ -9,9 +9,9 @@ This program is free software: you can redistribute it and/or modify it under th
 This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-version 0.10, March 17, 2018
+version 0.11, March 17, 2018
 
-- using FFTW as of version 0.10
+- using FFTW as of version 0.11
 
 */
 
@@ -536,7 +536,7 @@ static void *convolve_tilde_new(t_symbol *s, int argc, t_atom *argv)
  		x->x_invOutFftwOut[i] = 0.0;
 	}	
 
-    post("%s: version 0.10", x->x_objSymbol->s_name);
+    post("%s: version 0.11", x->x_objSymbol->s_name);
     post("%s: partition size %i", x->x_objSymbol->s_name, x->x_window);
 
     return(x);
