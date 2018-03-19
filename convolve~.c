@@ -29,7 +29,9 @@ typedef struct _convolve_tilde
 	t_symbol *x_objSymbol;
     t_symbol *x_arrayName;
     t_word *x_vec;
+	t_clock *x_clock;
     t_sample *x_irSignalEq;
+    int x_startupFlag;
     int x_arraySize;
     int x_numParts;
     t_float x_sr;
@@ -74,10 +76,12 @@ static void convolve_tilde_analyze(convolve_tilde *x, t_symbol *arrayName)
 	
     // if this call to _analyze() is issued from _eq(), the incoming arrayName will match x->x_arrayName.
     // if incoming arrayName doesn't match x->x_arrayName, load arrayName and dump its samples into x_irSignalEq
-    if(arrayName->s_name != x->x_arrayName->s_name)
+    if(arrayName->s_name != x->x_arrayName->s_name || x->x_startupFlag)
     {
     	int oldArraySize;
-    	
+
+		x->x_startupFlag = 0;
+
     	oldArraySize = x->x_arraySize;
     	
 		if(!(arrayPtr = (t_garray *)pd_findbyclass(arrayName, garray_class)))
@@ -141,7 +145,7 @@ static void convolve_tilde_analyze(convolve_tilde *x, t_symbol *arrayName)
 		
 		if(thisArraySize != x->x_arraySize)
 		{
-			pd_error(x, "%s: size of array %s has changed since previous analysis...aborting. Reload %s with previous IR contents", x->x_objSymbol->s_name, arrayName->s_name, arrayName->s_name);
+			pd_error(x, "%s: size of array %s has changed since previous analysis...aborting. Reload %s with previous IR contents or analyze another array.", x->x_objSymbol->s_name, arrayName->s_name, arrayName->s_name);
 			return;
 		}
 	}
@@ -224,14 +228,14 @@ static void convolve_tilde_analyze(convolve_tilde *x, t_symbol *arrayName)
 	fftwf_free(fftwOut);
 	fftwf_destroy_plan(fftwPlan); 
 	
-	post("%s: analysis of IR array %s complete. %i partitions", x->x_objSymbol->s_name, x->x_arrayName->s_name, x->x_numParts);
+	post("%s: analysis of IR array %s complete. Array size: %i. Partitions: %i.", x->x_objSymbol->s_name, x->x_arrayName->s_name, x->x_arraySize, x->x_numParts);
 }
 
-
+// should pad the IR with zeros BEFORE AND AFTER before doing the FFT since we're not windowing at all. How big of a pad? x->x_arraySize on each side? Half that?
 static void convolve_tilde_eq(convolve_tilde *x, t_symbol *s, int argc, t_atom *argv)
 {
-    int i, windowHalf;
-    t_float *fftwIn, *eqArray;
+    int i, j, windowHalf, rampNumSamples;
+    t_float rampDuration, *fftwIn, *eqArray;
     fftwf_complex *fftwOut;
 	fftwf_plan fftwForwardPlan, fftwInversePlan;
 
@@ -282,9 +286,20 @@ static void convolve_tilde_eq(convolve_tilde *x, t_symbol *s, int argc, t_atom *
 	// execute inverse FFT
 	fftwf_execute(fftwInversePlan);
 	
+	// this is a real copout for now! Just fading out the last half-second of the EQd IR signal since applying bin scalars and doing the inverse FFT without windowing produces nonzero values at the end of the IR signal.
+	rampDuration = 0.5;
+	rampNumSamples = round(rampDuration * x->x_sr);
+	
+	if(x->x_arraySize<rampNumSamples)
+		post("%s: WARNING: when using the \"eq\" method, IR signal should be at least 0.5 seconds long at current sampling rate of %i. Output may be distorted.", x->x_objSymbol->s_name, (int)x->x_sr);
+	
 	// write altered signal to internal memory for analysis
-	for(i=0; i<x->x_arraySize; i++)
+	for(i=0; i<x->x_arraySize-rampNumSamples; i++)
 		x->x_irSignalEq[i] = fftwIn[i]/x->x_arraySize;
+
+	// ramp out with a quartic curve for the last rampDuration seconds
+	for(j=(rampNumSamples-1); i<x->x_arraySize; i++, j--)
+		x->x_irSignalEq[i] = (fftwIn[i]/x->x_arraySize)*powf(((t_float)j/rampNumSamples), 4);
 
     t_freebytes(fftwIn, x->x_arraySize*sizeof(t_float));
     t_freebytes(eqArray, windowHalf*sizeof(t_float));
@@ -435,6 +450,16 @@ static void convolve_tilde_flush(convolve_tilde *x)
 }
 
 
+static void convolve_tilde_initClock(convolve_tilde *x)
+{
+	x->x_startupFlag = 1;
+
+	// try analyzing at creation if there was a table specified
+	if(x->x_arrayName != gensym("NOARRAYSPECIFIED"))
+		convolve_tilde_analyze(x, x->x_arrayName);
+}
+
+
 static void *convolve_tilde_new(t_symbol *s, int argc, t_atom *argv)
 {
     convolve_tilde *x = (convolve_tilde *)pd_new(convolve_tilde_class);
@@ -457,7 +482,12 @@ static void *convolve_tilde_new(t_symbol *s, int argc, t_atom *argv)
 			window = atom_getfloat(argv);
 			x->x_arrayName = gensym("NOARRAYSPECIFIED");
 			break;
-			
+
+		case 2:
+			window = atom_getfloat(argv);
+			x->x_arrayName = atom_getsymbol(argv+1);
+			break;
+	
 		default:
 			pd_error(x, "%s: the only creation argument should be the window/partition size in samples", x->x_objSymbol->s_name);
 			window = DEFAULTWIN;
@@ -481,7 +511,8 @@ static void *convolve_tilde_new(t_symbol *s, int argc, t_atom *argv)
 		x->x_window = DEFAULTWIN;
 		pd_error("%s: window not a multiple of 64. default value of %i used instead", x->x_objSymbol->s_name, x->x_window);
 	}
-	
+
+    x->x_clock = clock_new(x, (t_method)convolve_tilde_initClock);	
 	x->x_arraySize = 0;
 	x->x_numParts = 0;
 	x->x_sr = 44100;
@@ -530,6 +561,8 @@ static void *convolve_tilde_new(t_symbol *s, int argc, t_atom *argv)
     post("%s: version 0.11", x->x_objSymbol->s_name);
     post("%s: partition size %i", x->x_objSymbol->s_name, x->x_window);
 
+	clock_delay(x->x_clock, 0); // wait 0ms before IR analysis to give a control cycle for IR samples to be loaded
+	
     return(x);
 }
 
@@ -632,7 +665,7 @@ static t_int *convolve_tilde_perform(t_int *w)
 		}
 
 		// push the live freq domain data buffer contents backwards
-		for(i=0; i<(numParts*(window+1))-(window+1); i++)
+		for(i=0; i<((numParts*(window+1))-(window+1)); i++)
 		{
 			x->x_liveFreqDomData[i][0] = x->x_liveFreqDomData[(window+1)+i][0];
 			x->x_liveFreqDomData[i][1] = x->x_liveFreqDomData[(window+1)+i][1];
@@ -646,11 +679,11 @@ static t_int *convolve_tilde_perform(t_int *w)
 		}
 		
 		// push remaining output buffer contents backwards
-		for(i=0; i<((x->x_numParts+1)*x->x_windowDouble)-windowDouble; i++)
+		for(i=0; i<(((numParts+1)*windowDouble)-windowDouble); i++)
 			x->x_nonOverlappedOutput[i] = x->x_nonOverlappedOutput[windowDouble+i];
 		
 		// init the newly available chunk at the end
-		for(; i<(x->x_numParts+1)*x->x_windowDouble; i++)
+		for(; i<((numParts+1)*windowDouble); i++)
 			x->x_nonOverlappedOutput[i] = 0.0;
  		}
 	};
@@ -716,6 +749,8 @@ static void convolve_tilde_free(convolve_tilde *x)
 	}
 	else
 	    t_freebytes(x->x_nonOverlappedOutput, 0);
+
+	clock_free(x->x_clock);
 };
 
 
