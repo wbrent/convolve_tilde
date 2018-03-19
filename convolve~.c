@@ -21,9 +21,6 @@ version 0.11, March 17, 2018
 #define MINWIN 64
 #define DEFAULTWIN 2048
 
-// 25 Bark boundary frequencies. Not including Nyquist as the final bound, as that may change with sp[0]->s_sr
-// t_float barkBounds[] = {0, 100, 200, 300, 400, 510, 630, 770, 920, 1080, 1270, 1480, 1720, 2000, 2320, 2700, 3150, 3700, 4400, 5300, 6400, 7700, 9500, 12000, 15500};
-
 static t_class *convolve_tilde_class;
 
 typedef struct _convolve_tilde 
@@ -33,7 +30,6 @@ typedef struct _convolve_tilde
     t_symbol *x_arrayName;
     t_word *x_vec;
     t_sample *x_irSignalEq;
-    int x_suspendDSP;
     int x_arraySize;
     int x_numParts;
     t_float x_sr;
@@ -75,9 +71,6 @@ static void convolve_tilde_analyze(convolve_tilde *x, t_symbol *arrayName)
 		oldNonOverlappedSize = (x->x_numParts+1)*x->x_windowDouble;
 	else
 		oldNonOverlappedSize = 0;
-
-
-	// TODO: need very careful checks for all this array-loading-success-dependent memory resizing
 	
     // if this call to _analyze() is issued from _eq(), the incoming arrayName will match x->x_arrayName.
     // if incoming arrayName doesn't match x->x_arrayName, load arrayName and dump its samples into x_irSignalEq
@@ -141,7 +134,6 @@ static void convolve_tilde_analyze(convolve_tilde *x, t_symbol *arrayName)
 		int thisArraySize;
 
 		// if we want to assume that a 2nd call to analyze() with the same array name is safe (and we don't have to reload x_vec or update x_arraySize), we have to do some careful safety checks to make sure that the size of x_arrayName hasn't changed since the last time this was called. If it has, we should just abort for now.
-		
 		thisArraySize = 0;
 		
 		thisArrayPtr = (t_garray *)pd_findbyclass(arrayName, garray_class);
@@ -149,7 +141,7 @@ static void convolve_tilde_analyze(convolve_tilde *x, t_symbol *arrayName)
 		
 		if(thisArraySize != x->x_arraySize)
 		{
-			pd_error(x, "%s: size of array %s has changed...aborting. Reload %s with previous IR contents", x->x_objSymbol->s_name, arrayName->s_name, arrayName->s_name);
+			pd_error(x, "%s: size of array %s has changed since previous analysis...aborting. Reload %s with previous IR contents", x->x_objSymbol->s_name, arrayName->s_name, arrayName->s_name);
 			return;
 		}
 	}
@@ -280,7 +272,7 @@ static void convolve_tilde_eq(convolve_tilde *x, t_symbol *s, int argc, t_atom *
 	// execute forward FFT
 	fftwf_execute(fftwForwardPlan);
 
-	// apply EQ gain scalars
+	// apply bin scalars
 	for(i=0; i<windowHalf; i++)
 	{
 		fftwOut[i][0] *= eqArray[i];
@@ -490,7 +482,6 @@ static void *convolve_tilde_new(t_symbol *s, int argc, t_atom *argv)
 		pd_error("%s: window not a multiple of 64. default value of %i used instead", x->x_objSymbol->s_name, x->x_window);
 	}
 	
-	x->x_suspendDSP = 0;
 	x->x_arraySize = 0;
 	x->x_numParts = 0;
 	x->x_sr = 44100;
@@ -559,10 +550,10 @@ static t_int *convolve_tilde_perform(t_int *w)
 	numParts = x->x_numParts;
 	ampScalar = x->x_ampScalar;
 	
-	if(x->x_suspendDSP || n!=64)
+	if(n!=64 || numParts<1)
 	{
-		for(i=0; i<n; i++, out++)
-			*out = 0.0;
+		for(i=0; i<n; i++)
+			out[i] = 0.0;
 
 		return (w+5);		
 	};
@@ -662,17 +653,11 @@ static t_int *convolve_tilde_perform(t_int *w)
 		for(; i<(x->x_numParts+1)*x->x_windowDouble; i++)
 			x->x_nonOverlappedOutput[i] = 0.0;
  		}
- 
 	};
 	
 	// output
-	for(i=0; i<n; i++, out++)
-	{
-		if(x->x_numParts>0)
-			*out = x->x_finalOutput[(x->x_dspTick*n)+i];
-		else
-			*out = 0.0;
-	};
+	for(i=0; i<n; i++)
+		out[i] = x->x_finalOutput[(x->x_dspTick*n)+i];
 	
     return (w+5);
 }
@@ -693,19 +678,7 @@ static void convolve_tilde_dsp(convolve_tilde *x, t_signal **sp)
 
 	// TODO: could allow for re-blocking and re-calc x_bufferLimit based on new x_n
 	if(sp[0]->s_n != x->x_n)
-	{
-		x->x_suspendDSP = 1;
 	    pd_error(x, "%s: block size must be 64. DSP suspended.", x->x_objSymbol->s_name);
-	}
-	else
-	{
-		// best to flush all buffers and reset buffering process before resuming
-// 		convolve_tilde_flush(x);
-// 
-// 	    post("%s: DSP resumed.", x->x_objSymbol->s_name);
-
-		x->x_suspendDSP = 0;
-	}
 	
 	if(sp[0]->s_sr != x->x_sr)
 	{
