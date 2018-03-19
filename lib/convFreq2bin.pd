@@ -15,6 +15,8 @@
 #X msg 315 160 0 \$1;
 #X obj 315 181 unpack f f;
 #X obj 315 55 loadbang;
+#X floatatom 146 151 10 0 0 0 - - -, f 10;
+#X floatatom 327 138 10 0 0 0 - - -, f 10;
 #X connect 0 0 1 0;
 #X connect 1 0 2 0;
 #X connect 2 0 3 0;
@@ -23,10 +25,12 @@
 #X connect 7 0 2 1;
 #X connect 8 0 1 1;
 #X connect 8 0 11 0;
+#X connect 8 0 16 0;
 #X connect 9 0 5 0;
 #X connect 10 0 11 0;
 #X connect 11 0 12 0;
 #X connect 12 0 13 0;
+#X connect 12 0 17 0;
 #X connect 13 0 14 0;
 #X connect 14 0 9 1;
 #X connect 14 1 9 2;
