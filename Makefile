@@ -56,9 +56,6 @@ all: $(SOURCES:.c=.o)
 	$(STRIP) $(SOURCES:.c=.$(EXTENSION))
 	rm -f -- $(SOURCES:.c=.o)
 
-%.o: %.c
-	$(CC) $(CFLAGS) -o "$*.o" -c "$*.c"
-
 
 .PHONY: clean
 

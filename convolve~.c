@@ -20,6 +20,9 @@ version 0.11, March 17, 2018
 #include <math.h>
 #define MINWIN 64
 #define DEFAULTWIN 2048
+#define NUMBARKBOUNDS 25
+
+t_float barkBounds[] = {0, 100, 200, 300, 400, 510, 630, 770, 920, 1080, 1270, 1480, 1720, 2000, 2320, 2700, 3150, 3700, 4400, 5300, 6400, 7700, 9500, 12000, 15500};
 
 static t_class *convolve_tilde_class;
 
@@ -29,7 +32,9 @@ typedef struct _convolve_tilde
 	t_symbol *x_objSymbol;
     t_symbol *x_arrayName;
     t_word *x_vec;
+	t_clock *x_clock;
     t_sample *x_irSignalEq;
+    int x_startupFlag;
     int x_arraySize;
     int x_numParts;
     t_float x_sr;
@@ -74,10 +79,12 @@ static void convolve_tilde_analyze(convolve_tilde *x, t_symbol *arrayName)
 	
     // if this call to _analyze() is issued from _eq(), the incoming arrayName will match x->x_arrayName.
     // if incoming arrayName doesn't match x->x_arrayName, load arrayName and dump its samples into x_irSignalEq
-    if(arrayName->s_name != x->x_arrayName->s_name)
+    if(arrayName->s_name != x->x_arrayName->s_name || x->x_startupFlag)
     {
     	int oldArraySize;
-    	
+
+		x->x_startupFlag = 0;
+
     	oldArraySize = x->x_arraySize;
     	
 		if(!(arrayPtr = (t_garray *)pd_findbyclass(arrayName, garray_class)))
@@ -141,7 +148,7 @@ static void convolve_tilde_analyze(convolve_tilde *x, t_symbol *arrayName)
 		
 		if(thisArraySize != x->x_arraySize)
 		{
-			pd_error(x, "%s: size of array %s has changed since previous analysis...aborting. Reload %s with previous IR contents", x->x_objSymbol->s_name, arrayName->s_name, arrayName->s_name);
+			pd_error(x, "%s: size of array %s has changed since previous analysis...aborting. Reload %s with previous IR contents or analyze another array.", x->x_objSymbol->s_name, arrayName->s_name, arrayName->s_name);
 			return;
 		}
 	}
@@ -224,13 +231,13 @@ static void convolve_tilde_analyze(convolve_tilde *x, t_symbol *arrayName)
 	fftwf_free(fftwOut);
 	fftwf_destroy_plan(fftwPlan); 
 	
-	post("%s: analysis of IR array %s complete. %i partitions", x->x_objSymbol->s_name, x->x_arrayName->s_name, x->x_numParts);
+	post("%s: analysis of IR array %s complete. Array size: %i. Partitions: %i.", x->x_objSymbol->s_name, x->x_arrayName->s_name, x->x_arraySize, x->x_numParts);
 }
 
 
 static void convolve_tilde_eq(convolve_tilde *x, t_symbol *s, int argc, t_atom *argv)
 {
-    int i, windowHalf;
+    int i, j, windowTriple, windowTripleHalf, *barkBinBounds;
     t_float *fftwIn, *eqArray;
     fftwf_complex *fftwOut;
 	fftwf_plan fftwForwardPlan, fftwInversePlan;
@@ -240,40 +247,66 @@ static void convolve_tilde_eq(convolve_tilde *x, t_symbol *s, int argc, t_atom *
 		pd_error(x, "%s: no IR array has been analyzed", x->x_objSymbol->s_name);
 	else
 	{
+	// we'll pad with x->x_arraySize zeros before and after the IR signal
+	windowTriple = x->x_arraySize*3;
+
 	// FFTW documentation says the output of a r2c forward transform is floor(N/2)+1
-	windowHalf = floor(x->x_arraySize/2)+1;
+	windowTripleHalf = floor(windowTriple/(t_float)2)+1;
 	
-	if(argc != windowHalf)
-	{
-		pd_error(x, "%s: incorrect number of bin scalars provided for EQ method. For IR array %s, %i bin scalars are needed (floor(%i/2)+1).", x->x_objSymbol->s_name, x->x_arrayName->s_name, windowHalf, x->x_arraySize);		
-		return;
-	}
+	eqArray = (t_float *)getbytes(windowTripleHalf*sizeof(t_float));
+
+	// at this point, if we took in 24 bark band scalars instead of the insane x->x_arraySize*3 scalars, we could find the bin bounds for each of the Bark bands and fill eqArray with those.
+
+	// array to hold bin number of each of the 25 bark bounds, plus one more for Nyquist
+	barkBinBounds = (int *)getbytes((NUMBARKBOUNDS+1)*sizeof(int));
 	
-	eqArray = (t_float *)getbytes(windowHalf*sizeof(t_float));
+	for(i=0; i<NUMBARKBOUNDS; i++)
+		barkBinBounds[i] = floor((barkBounds[i]*windowTriple)/x->x_sr);
 
-	for(i=0; i<argc; i++)
-		eqArray[i] = (atom_getfloat(argv+i)<0.0)?0:atom_getfloat(argv+i);
+	// the upper bound should be the Nyquist bin
+	barkBinBounds[NUMBARKBOUNDS] = windowTripleHalf-1;
 
+	if(argc != NUMBARKBOUNDS)
+		post("%s: WARNING: \"eq\" message should contain %i frequency band scalars", x->x_objSymbol->s_name, NUMBARKBOUNDS);
+
+	// need to check that argc == NUMBARKBOUNDS
+	for(i=0; i<NUMBARKBOUNDS && i<argc; i++)
+		for(j=barkBinBounds[i]; j<barkBinBounds[i+1]; j++)
+			eqArray[j] = (atom_getfloat(argv+i)<0.0)?0:atom_getfloat(argv+i);
+	
+	// if there were too few arguments coming in (argc<NUMBARKBOUNDS), fill out the remaining bin scalars in eqArray with 1.0
+	for(; i<NUMBARKBOUNDS; i++)
+		for(j=barkBinBounds[i]; j<barkBinBounds[i+1]; j++)
+			eqArray[j] = 1.0;
+			
+	// need to set the Nyquist bin too, since the j loop doesn't go to the upper bound inclusive
+	eqArray[windowTripleHalf-1] = (atom_getfloat(argv+(NUMBARKBOUNDS-1))<0.0)?0:atom_getfloat(argv+(NUMBARKBOUNDS-1));
+	
     // set up FFTW input buffer
-    fftwIn = (t_float *)t_getbytes(x->x_arraySize * sizeof(t_float));
+    fftwIn = (t_float *)t_getbytes(windowTriple * sizeof(t_float));
 
 	// set up the FFTW output buffer
-	fftwOut = (fftwf_complex *)fftwf_alloc_complex(windowHalf);
+	fftwOut = (fftwf_complex *)fftwf_alloc_complex(windowTripleHalf);
 
 	// forward FFT plan
-	fftwForwardPlan = fftwf_plan_dft_r2c_1d(x->x_arraySize, fftwIn, fftwOut, FFTW_ESTIMATE);
+	fftwForwardPlan = fftwf_plan_dft_r2c_1d(windowTriple, fftwIn, fftwOut, FFTW_ESTIMATE);
 
 	// inverse FFT plan
-	fftwInversePlan = fftwf_plan_dft_c2r_1d(x->x_arraySize, fftwOut, fftwIn, FFTW_ESTIMATE);
-	
+	fftwInversePlan = fftwf_plan_dft_c2r_1d(windowTriple, fftwOut, fftwIn, FFTW_ESTIMATE);
+
+	// fill input buffer with zeros
+	for(i=0; i<windowTriple; i++)
+		fftwIn[i] = 0.0;
+
+	// place actual IR signal in center of buffer
 	for(i=0; i<x->x_arraySize; i++)
-		fftwIn[i] = x->x_vec[i].w_float;
+		fftwIn[x->x_arraySize+i] = x->x_vec[i].w_float;
 
 	// execute forward FFT
 	fftwf_execute(fftwForwardPlan);
 
 	// apply bin scalars
-	for(i=0; i<windowHalf; i++)
+	for(i=0; i<windowTripleHalf; i++)
 	{
 		fftwOut[i][0] *= eqArray[i];
 		fftwOut[i][1] *= eqArray[i];
@@ -284,14 +317,15 @@ static void convolve_tilde_eq(convolve_tilde *x, t_symbol *s, int argc, t_atom *
 	
 	// write altered signal to internal memory for analysis
 	for(i=0; i<x->x_arraySize; i++)
-		x->x_irSignalEq[i] = fftwIn[i]/x->x_arraySize;
+		x->x_irSignalEq[i] = fftwIn[x->x_arraySize+i]/windowTriple;
 
-    t_freebytes(fftwIn, x->x_arraySize*sizeof(t_float));
-    t_freebytes(eqArray, windowHalf*sizeof(t_float));
+    t_freebytes(eqArray, windowTripleHalf*sizeof(t_float));
+    t_freebytes(barkBinBounds, (NUMBARKBOUNDS+1)*sizeof(int));
+    t_freebytes(fftwIn, windowTriple*sizeof(t_float));
 	fftwf_free(fftwOut);
 	fftwf_destroy_plan(fftwForwardPlan); 
 	fftwf_destroy_plan(fftwInversePlan); 
-	
+
 	post("%s: EQ scalars applied to IR array %s", x->x_objSymbol->s_name, x->x_arrayName->s_name);
 	
 	// re-run analysis
@@ -435,6 +469,16 @@ static void convolve_tilde_flush(convolve_tilde *x)
 }
 
 
+static void convolve_tilde_initClock(convolve_tilde *x)
+{
+	x->x_startupFlag = 1;
+
+	// try analyzing at creation if there was a table specified
+	if(x->x_arrayName != gensym("NOARRAYSPECIFIED"))
+		convolve_tilde_analyze(x, x->x_arrayName);
+}
+
+
 static void *convolve_tilde_new(t_symbol *s, int argc, t_atom *argv)
 {
     convolve_tilde *x = (convolve_tilde *)pd_new(convolve_tilde_class);
@@ -457,7 +501,12 @@ static void *convolve_tilde_new(t_symbol *s, int argc, t_atom *argv)
 			window = atom_getfloat(argv);
 			x->x_arrayName = gensym("NOARRAYSPECIFIED");
 			break;
-			
+
+		case 2:
+			window = atom_getfloat(argv);
+			x->x_arrayName = atom_getsymbol(argv+1);
+			break;
+	
 		default:
 			pd_error(x, "%s: the only creation argument should be the window/partition size in samples", x->x_objSymbol->s_name);
 			window = DEFAULTWIN;
@@ -481,7 +530,8 @@ static void *convolve_tilde_new(t_symbol *s, int argc, t_atom *argv)
 		x->x_window = DEFAULTWIN;
 		pd_error("%s: window not a multiple of 64. default value of %i used instead", x->x_objSymbol->s_name, x->x_window);
 	}
-	
+
+    x->x_clock = clock_new(x, (t_method)convolve_tilde_initClock);	
 	x->x_arraySize = 0;
 	x->x_numParts = 0;
 	x->x_sr = 44100;
@@ -530,6 +580,8 @@ static void *convolve_tilde_new(t_symbol *s, int argc, t_atom *argv)
     post("%s: version 0.11", x->x_objSymbol->s_name);
     post("%s: partition size %i", x->x_objSymbol->s_name, x->x_window);
 
+	clock_delay(x->x_clock, 0); // wait 0ms before IR analysis to give a control cycle for IR samples to be loaded
+	
     return(x);
 }
 
@@ -632,7 +684,7 @@ static t_int *convolve_tilde_perform(t_int *w)
 		}
 
 		// push the live freq domain data buffer contents backwards
-		for(i=0; i<(numParts*(window+1))-(window+1); i++)
+		for(i=0; i<((numParts*(window+1))-(window+1)); i++)
 		{
 			x->x_liveFreqDomData[i][0] = x->x_liveFreqDomData[(window+1)+i][0];
 			x->x_liveFreqDomData[i][1] = x->x_liveFreqDomData[(window+1)+i][1];
@@ -646,11 +698,11 @@ static t_int *convolve_tilde_perform(t_int *w)
 		}
 		
 		// push remaining output buffer contents backwards
-		for(i=0; i<((x->x_numParts+1)*x->x_windowDouble)-windowDouble; i++)
+		for(i=0; i<(((numParts+1)*windowDouble)-windowDouble); i++)
 			x->x_nonOverlappedOutput[i] = x->x_nonOverlappedOutput[windowDouble+i];
 		
 		// init the newly available chunk at the end
-		for(; i<(x->x_numParts+1)*x->x_windowDouble; i++)
+		for(; i<((numParts+1)*windowDouble); i++)
 			x->x_nonOverlappedOutput[i] = 0.0;
  		}
 	};
@@ -716,6 +768,8 @@ static void convolve_tilde_free(convolve_tilde *x)
 	}
 	else
 	    t_freebytes(x->x_nonOverlappedOutput, 0);
+
+	clock_free(x->x_clock);
 };
 
 
