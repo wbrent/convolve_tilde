@@ -55,7 +55,7 @@
 #X obj 158 246 env~;
 #X floatatom 158 267 5 0 0 1 dB - -, f 5;
 #X obj 224 348 hsl 128 15 0 100 0 0 \$0-master-volume \$0-master-volume-set
-master-volume 8 8 0 12 -228856 -1 -1 12700 1;
+master-volume 8 8 0 12 -228856 -1 -1 0 1;
 #X obj 481 37 cnv 15 400 220 empty empty empty 20 12 0 14 -233017 -66577
 0;
 #X obj 481 352 cnv 15 220 220 empty empty empty 20 12 0 14 -233017
@@ -63,7 +63,7 @@ master-volume 8 8 0 12 -228856 -1 -1 12700 1;
 #X text 490 360 Try these different IRs;
 #X floatatom 361 328 5 0 0 0 - #0-wet-volume -, f 5;
 #X obj 224 328 hsl 128 15 0 100 0 0 \$0-wet-volume \$0-wet-volume-set
-wet-volume 8 8 0 12 -228856 -1 -1 12700 1;
+wet-volume 8 8 0 12 -228856 -1 -1 0 1;
 #X floatatom 361 308 5 0 0 0 - #0-dry-volume -, f 5;
 #X obj 224 308 hsl 128 15 0 100 0 0 \$0-dry-volume \$0-dry-volume-set
 dry-volume 8 8 0 12 -228856 -1 -1 0 1;
@@ -187,7 +187,7 @@ the amplitude by the reciprocal of N.;
 #X restore 481 267 pd partitioned-convolution-explained;
 #X text 218 364 ** Beware of hot output!! **;
 #X text 728 326 Small partition sizes are expensive, f 36;
-#N canvas 196 114 478 333 24-band-gain-scalars 1;
+#N canvas 196 114 478 333 24-band-gain-scalars 0;
 #X obj 345 17 bng 15 250 50 0 empty empty unity 17 7 0 12 -262144 -1
 -1;
 #X obj 275 17 bng 15 250 50 0 empty empty mute 17 7 0 12 -262144 -1
