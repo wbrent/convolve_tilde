@@ -790,7 +790,7 @@ void convolve_tilde_setup(void)
 
 	class_addcreator(
 		(t_newmethod)convolve_tilde_new,
-		gensym("wbrent/convolve~"),
+		gensym("wmbrent/convolve~"),
 		A_GIMME,
 		0
 	);
