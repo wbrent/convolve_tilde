@@ -788,6 +788,13 @@ void convolve_tilde_setup(void)
 
     CLASS_MAINSIGNALIN(convolve_tilde_class, convolve_tilde, x_f);
 
+	class_addcreator(
+		(t_newmethod)convolve_tilde_new,
+		gensym("wbrent/convolve~"),
+		A_GIMME,
+		0
+	);
+
 	class_addmethod(
 		convolve_tilde_class,
 		(t_method)convolve_tilde_print,
