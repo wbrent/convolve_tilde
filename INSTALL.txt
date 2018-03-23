@@ -12,7 +12,7 @@ and like this on a Macintosh:
 
 and like this on a Raspberry Pi:
 
-./configure --enable-float --enable-neon
+./configure CFLAGS="-fPIC" --enable-float
 
 Then run:
 
