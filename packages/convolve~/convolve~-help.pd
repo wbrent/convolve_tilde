@@ -1,0 +1,337 @@
+#N canvas 256 136 1030 663 10;
+#N canvas 641 50 679 463 init 0;
+#X obj 246 318 soundfiler;
+#X msg 357 133 \; \$1-dry-volume-set 0 \; \$1-wet-volume-set 0 \; \$1-master-volume-set
+0 \;;
+#X obj 357 113 f \$0;
+#X obj 407 38 f \$0;
+#X obj 46 58 loadbang;
+#X obj 23 79 bng 15 250 50 0 empty empty empty 17 7 0 10 -262144 -1
+-1;
+#X obj 46 190 s \$0-lb4;
+#X obj 46 79 t b b b b;
+#X obj 136 130 s \$0-lb1;
+#X obj 106 150 s \$0-lb2;
+#X obj 76 170 s \$0-lb3;
+#X obj 246 27 r \$0-lb2;
+#X msg 246 208 read -resize ./audio/ir-large-chamber.wav \$1-largeChamber
+;
+#X msg 286 228 read -resize ./audio/ir-tunnel.wav \$1-tunnel;
+#X msg 326 248 read -resize ./audio/ir-tam.wav \$1-tamTam;
+#X msg 366 268 read -resize ./audio/ir-cym.wav \$1-cymbal;
+#X obj 246 159 f \$0;
+#X obj 246 180 t f f f f;
+#X obj 246 48 t b b b;
+#X msg 407 58 \; \$1-25-band-eq const 1 \;;
+#X connect 2 0 1 0;
+#X connect 3 0 19 0;
+#X connect 4 0 7 0;
+#X connect 5 0 7 0;
+#X connect 7 0 6 0;
+#X connect 7 1 10 0;
+#X connect 7 2 9 0;
+#X connect 7 3 8 0;
+#X connect 11 0 18 0;
+#X connect 12 0 0 0;
+#X connect 13 0 0 0;
+#X connect 14 0 0 0;
+#X connect 15 0 0 0;
+#X connect 16 0 17 0;
+#X connect 17 0 12 0;
+#X connect 17 1 13 0;
+#X connect 17 2 14 0;
+#X connect 17 3 15 0;
+#X connect 18 0 16 0;
+#X connect 18 1 2 0;
+#X connect 18 2 3 0;
+#X restore 301 90 pd init;
+#X floatatom 361 348 5 0 0 0 - #0-master-volume -, f 5;
+#X obj 110 91 readsf~;
+#X msg 132 62 stop;
+#X obj 34 55 *~;
+#X obj 34 126 +~;
+#X obj 64 55 tgl 15 0 empty empty empty 17 7 0 10 -262144 -1 -1 0 1
+;
+#X obj 158 246 env~;
+#X floatatom 158 267 5 0 0 1 dB - -, f 5;
+#X obj 224 348 hsl 128 15 0 100 0 0 \$0-master-volume \$0-master-volume-set
+master-volume 8 8 0 12 -228856 -1 -1 8700 1;
+#X obj 481 37 cnv 15 400 220 empty empty empty 20 12 0 14 -233017 -66577
+0;
+#X obj 481 352 cnv 15 220 220 empty empty empty 20 12 0 14 -233017
+-66577 0;
+#X text 490 360 Try these different IRs;
+#X floatatom 361 328 5 0 0 0 - #0-wet-volume -, f 5;
+#X obj 224 328 hsl 128 15 0 100 0 0 \$0-wet-volume \$0-wet-volume-set
+wet-volume 8 8 0 12 -228856 -1 -1 12700 1;
+#X floatatom 361 308 5 0 0 0 - #0-dry-volume -, f 5;
+#X obj 224 308 hsl 128 15 0 100 0 0 \$0-dry-volume \$0-dry-volume-set
+dry-volume 8 8 0 12 -228856 -1 -1 0 1;
+#N canvas 190 207 521 438 mix-dry-and-wet 0;
+#X obj 46 24 inlet~;
+#X obj 46 364 outlet~;
+#X obj 46 289 *~;
+#X obj 346 247 dbtorms;
+#X obj 346 289 line~;
+#X obj 346 268 pack f 40;
+#X obj 46 159 *~;
+#X obj 96 117 dbtorms;
+#X obj 96 159 line~;
+#X obj 96 138 pack f 40;
+#X obj 46 230 +~;
+#X obj 236 24 inlet~;
+#X obj 236 159 *~;
+#X obj 286 117 dbtorms;
+#X obj 286 159 line~;
+#X obj 286 138 pack f 40;
+#X obj 96 96 r \$0-dry-volume;
+#X obj 286 96 r \$0-wet-volume;
+#X obj 346 226 r \$0-master-volume;
+#X connect 0 0 6 0;
+#X connect 2 0 1 0;
+#X connect 3 0 5 0;
+#X connect 4 0 2 1;
+#X connect 5 0 4 0;
+#X connect 6 0 10 0;
+#X connect 7 0 9 0;
+#X connect 8 0 6 1;
+#X connect 9 0 8 0;
+#X connect 10 0 2 0;
+#X connect 11 0 12 0;
+#X connect 12 0 10 1;
+#X connect 13 0 15 0;
+#X connect 14 0 12 1;
+#X connect 15 0 14 0;
+#X connect 16 0 7 0;
+#X connect 17 0 13 0;
+#X connect 18 0 3 0;
+#X restore 34 302 pd mix-dry-and-wet;
+#N canvas 0 23 487 359 cpu-meter 0;
+#X floatatom 103 122 5 0 0 1 % - -, f 5;
+#X obj 272 158 cputime;
+#X obj 272 102 metro 1000;
+#X msg 272 66 1;
+#X obj 272 130 t b b;
+#X obj 272 218 * 0.1;
+#X obj 272 187 int;
+#X obj 272 38 r \$0-lb1;
+#X connect 1 0 6 0;
+#X connect 2 0 4 0;
+#X connect 3 0 2 0;
+#X connect 4 0 1 0;
+#X connect 4 1 1 1;
+#X connect 5 0 0 0;
+#X connect 6 0 5 0;
+#X connect 7 0 3 0;
+#X coords 0 -1 1 1 85 40 1 100 100;
+#X restore 731 280 pd cpu-meter;
+#X obj 159 158 r \$0-convolve;
+#X obj 513 548 s \$0-convolve;
+#X text 834 624 William Brent \, March 2018;
+#X obj 4 4 cnv 10 400 10 empty empty empty 20 12 0 14 -233017 -66577
+0;
+#X obj 4 4 cnv 10 10 400 empty empty empty 20 12 0 14 -233017 -66577
+0;
+#X obj 731 352 cnv 15 220 220 empty empty empty 20 12 0 14 -233017
+-66577 0;
+#X obj 753 539 s \$0-convolve;
+#X msg 793 503 window 64;
+#X msg 773 473 window 1920;
+#N canvas 740 104 913 453 partitioned-convolution-explained 0;
+#X text 38 177 This is the standard frequency domain method \, which
+is much faster than performing convolution in the time domain. In either
+case \, the result is that a scaled and time shifted copy of one file
+takes the place of every single sample in the other. So \, if you have
+an impulse response (IR) of a room - that is \, a burst of noise followed
+by the natural echos the room produces - you can graft that pattern
+of echos onto every single sample in your input file.;
+#X text 38 297 With real-time input \, the situation becomes more complicated.
+We can have an IR prepared in advance \, but the other sound source
+only shows up bit by bit. Typically \, it will arrive in chunks of
+64 \, 128 \, 256 \, or some other number of samples. Partitioned convolution
+solves this problem by breaking up the IR into some number of partitions
+that is each M samples long. M should be the same size as the chunks
+of input that arrive in real time. Then \, each of the partitions is
+Fourier transformed and stored as frequency domain data.;
+#X text 488 247 The last point to make is that the size of the Fourier
+transform must be M*2. That is \, when we get the latest M samples
+\, we pad it out with zeros to M*2 samples \, then transform it. All
+of the IR partitions are padded to this same size. When any one chunk
+is inverse Fourier transformed \, its main content will be over the
+first M samples \, trailed by low amplitude samples or zeros. A process
+of overlapping and adding is then performed so that the first M samples
+of the most recently processed M*2 samples is mixed down with the last
+M samples of the previous chunk of processed M*2 samples.;
+#X text 488 27 When each new input chunk arrives (the M most recent
+samples) \, it is Fourier transformed into complex frequency domain
+data. The new chunk of frequency domain data is multiplied against
+each of the pre-prepared IR partitions that are also in the frequency
+domain. We can immediately do an inverse Fourier transform on the most
+recently available chunk to hear that portion of the processed input
+in the time domain \, but the other chunks will wait in a buffer to
+be output in the future. The crucial point to understand is that as
+new input chunks come in and are transformed and multiplied in the
+frequency domain \, we sum that new data with whatever other frequency
+domain data was waiting in that part of the buffer. Thus \, we save
+numerous FFT calls by summing in the frequency domain.;
+#X text 38 27 With two pre-recorded sound files \, convolution is pretty
+simple. We determine which file is longer \, find the next highest
+power of 2 (we'll call it N) \, and then pad each of the files with
+addiontal zeros up to N. Next \, we do a forward Fourier transform
+on each of them \, and multiply the transformed data sets point by
+point. Because the data contain complex values \, we must do a complex
+multiply vis FOIL. After multiplication \, all that is left to do is
+an inverse Fourier transform on the frequency domain product. Depending
+on the specific FFT algorithm being used \, you may also have to scale
+the amplitude by the reciprocal of N.;
+#X restore 481 267 pd partitioned-convolution-explained;
+#X text 218 364 ** Beware of hot output!! **;
+#X text 728 326 Small partition sizes are expensive, f 36;
+#X msg 110 40 open ../doc/sound/voice.wav \, start;
+#X obj 301 224 cnv 15 150 60 empty empty empty 20 12 0 14 -233017 -66577
+0;
+#X text 310 232 Other messages;
+#N canvas 550 54 468 228 other-messages 0;
+#X obj 54 158 s \$0-convolve;
+#X msg 54 62 flush;
+#X msg 74 112 print;
+#X text 136 111 Print internal settings to the post window;
+#X text 116 61 Flush all internal buffer contents;
+#X connect 1 0 0 0;
+#X connect 2 0 0 0;
+#X restore 312 256 pd other-messages;
+#X text 740 360 Change window/partition size (and therefore delay)
+in samples. Window sizes do not need to be powers of two \, but they
+must be multiples of Pd's default block size (64)., f 31;
+#X text 478 578 It's ok to analyze different IRs and change window
+size on the fly \, although audio will be interrupted., f 35;
+#X obj 493 383 bng 15 250 50 0 empty empty empty 17 7 0 10 -262144
+-1 -1;
+#X obj 513 383 f \$0;
+#X msg 513 403 analyze \$1-largeChamber;
+#X msg 513 443 analyze \$1-tunnel;
+#X msg 513 483 analyze \$1-tamTam;
+#X msg 513 523 analyze \$1-cymbal;
+#X obj 301 111 table \$0-largeChamber;
+#X obj 301 153 table \$0-tamTam;
+#X obj 301 174 table \$0-cymbal;
+#X obj 493 423 bng 15 250 50 0 empty empty empty 17 7 0 10 -262144
+-1 -1;
+#X obj 513 423 f \$0;
+#X obj 493 463 bng 15 250 50 0 empty empty empty 17 7 0 10 -262144
+-1 -1;
+#X obj 513 463 f \$0;
+#X obj 493 503 bng 15 250 50 0 empty empty empty 17 7 0 10 -262144
+-1 -1;
+#X obj 513 503 f \$0;
+#X msg 753 443 window 320;
+#X text 834 604 [convolve~] version 0.11;
+#X obj 34 351 dac~;
+#X obj 34 34 adc~;
+#X obj 139 208 convolve~ 640 \$0-tunnel;
+#X text 490 51 [convolve~] is a partitioned impulse response (IR) convolution
+object. The 1st creation argument is the partition size \, which also
+determines the amount of delay between the dry and wet signal (i.e.
+\, pre-delay). Partition size must be a multiple of Pd's default block
+size: 64 samples (1.4512ms @ 44100Hz).;
+#X text 490 131 Optionally \, you can also supply the symbolic name
+of an array holding an IR as the 2nd creation argument so that you
+can begin use immediately at startup. Otherwise \, you must send [convolve~]
+an "analyze" message specifying the name of the table where your IR
+is stored.;
+#X text 490 201 Try playing the example voice.wav \, or listen to live
+input (with headphones to prevent feedback). No gain adjustments are
+made based on the IR in use \, so you'll have to find the right volume
+attenuation for your particular IR.;
+#X obj 301 132 table \$0-tunnel;
+#X text 32 400 Version 0.11 has a new "eq" method. Use the 25-band
+EQ table below \, which sends an "eq" messages when you click the "apply"
+button, f 62;
+#N canvas 196 114 478 333 25-band-EQ 0;
+#X obj 345 17 bng 15 250 50 0 empty empty unity 17 7 0 12 -262144 -1
+-1;
+#X obj 275 17 bng 15 250 50 0 empty empty mute 17 7 0 12 -262144 -1
+-1;
+#N canvas 0 22 450 278 (subpatch) 0;
+#X array \$0-25-band-eq 25 float 2;
+#X coords 0 1.25 25 0 355 64 1 0 0;
+#X restore 42 54 graph;
+#X text 39 268 Note that scalar values below 0 are clipped to 0 \,
+but there is no upper limit for scalars., f 67;
+#X obj 205 17 bng 15 250 50 0 \$0-send-eq-list empty apply 17 7 0 12
+-262144 -1 -1;
+#N canvas 548 198 650 289 mute-or-unity 0;
+#X obj 259 40 inlet;
+#X obj 49 40 inlet;
+#X obj 49 90 f \$0;
+#X obj 259 180 f \$0;
+#X msg 49 110 \; \$1-25-band-eq const 0 \;;
+#X msg 259 200 \; \$1-25-band-eq const 1 \;;
+#X obj 331 40 r \$0-convolve;
+#X obj 331 61 route analyze;
+#X obj 331 82 t b;
+#X text 330 126 With each new analysis \, [convolve~]'s internal EQ
+is reset to unity. Reset the EQ table here as a reminder of that.,
+f 41;
+#X connect 0 0 3 0;
+#X connect 1 0 2 0;
+#X connect 2 0 4 0;
+#X connect 3 0 5 0;
+#X connect 6 0 7 0;
+#X connect 7 0 8 0;
+#X connect 8 0 3 0;
+#X restore 279 159 pd mute-or-unity;
+#N canvas 756 370 594 270 send-eq-message-from-array 0;
+#X obj 29 159 list prepend eq;
+#X obj 29 180 list trim;
+#X obj 29 201 s \$0-convolve;
+#X obj 29 62 r \$0-send-eq-list;
+#X obj 29 108 array get \$0-25-band-eq;
+#X text 218 95 Here \, we dump the scalar values out of the table and
+send them to [convolve~] as an "eq" message. Since working in linear
+frequency bins isn't very intuitive \, [convolve~] uses the Bark frequency
+scale to define 25 frequency bands from DC to Nyquist., f 46;
+#X connect 0 0 1 0;
+#X connect 1 0 2 0;
+#X connect 3 0 4 0;
+#X connect 4 0 0 0;
+#X restore 41 159 pd send-eq-message-from-array;
+#X text 39 189 As of version 0.11 \, you can scale the complex frequency-domain
+values of the IR analysis via an "eq" message. This allows you to boost
+or attenuate energy in any of 25 Bark-based frequency bands. The "eq"
+method expects a list of 25 scalar values. Here \, the values are dumped
+into a list using [array get]., f 67;
+#X connect 0 0 5 1;
+#X connect 1 0 5 0;
+#X coords 0 -1 1 1 380 120 1 30 10;
+#X restore 34 452 pd 25-band-EQ;
+#X connect 2 0 5 1;
+#X connect 2 1 31 0;
+#X connect 3 0 2 0;
+#X connect 4 0 5 0;
+#X connect 5 0 17 0;
+#X connect 5 0 56 0;
+#X connect 6 0 4 1;
+#X connect 7 0 8 0;
+#X connect 17 0 54 0;
+#X connect 17 0 54 1;
+#X connect 19 0 56 0;
+#X connect 26 0 25 0;
+#X connect 27 0 25 0;
+#X connect 31 0 2 0;
+#X connect 37 0 38 0;
+#X connect 38 0 39 0;
+#X connect 39 0 20 0;
+#X connect 40 0 20 0;
+#X connect 41 0 20 0;
+#X connect 42 0 20 0;
+#X connect 46 0 47 0;
+#X connect 47 0 40 0;
+#X connect 48 0 49 0;
+#X connect 49 0 41 0;
+#X connect 50 0 51 0;
+#X connect 51 0 42 0;
+#X connect 52 0 25 0;
+#X connect 55 0 4 0;
+#X connect 56 0 7 0;
+#X connect 56 0 17 1;
