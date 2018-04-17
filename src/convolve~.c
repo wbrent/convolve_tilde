@@ -161,6 +161,7 @@ static void convolve_tilde_analyze(convolve_tilde *x, t_symbol *arrayName)
 	newNonOverlappedSize = (x->x_numParts+1)*x->x_windowDouble;
     
     // resize time-domain buffer
+    // this can probably just be x_windowDouble * 2!!
     x->x_nonOverlappedOutput = (t_sample *)t_resizebytes(
     	x->x_nonOverlappedOutput,
     	oldNonOverlappedSize*sizeof(t_sample),
@@ -543,7 +544,10 @@ static void *convolve_tilde_new(t_symbol *s, int argc, t_atom *argv)
 	x->x_bufferLimit = x->x_window/x->x_n;
 
 	// these will be resized when analysis occurs
+	
 	x->x_nonOverlappedOutput = (t_sample *)getbytes(0);
+	// this can probably just be x_windowDouble * 2!!
+	
 	x->x_irSignalEq = (t_sample *)getbytes(0);
 	x->x_irFreqDomData = (fftwf_complex *)fftwf_alloc_complex(x->x_window+1);
 	x->x_liveFreqDomData = (fftwf_complex *)fftwf_alloc_complex(x->x_window+1);
