@@ -9,7 +9,7 @@ This program is free software: you can redistribute it and/or modify it under th
 This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-version 0.11, March 17, 2018
+version 0.12, April 18, 2018
 
 - using FFTW as of version 0.11
 
@@ -73,7 +73,7 @@ static void convolve_tilde_analyze(convolve_tilde *x, t_symbol *arrayName)
 	fftwf_plan fftwPlan;
 
 	if(x->x_numParts>0)
-		oldNonOverlappedSize = (x->x_numParts+1)*x->x_windowDouble;
+		oldNonOverlappedSize = 2*x->x_windowDouble;
 	else
 		oldNonOverlappedSize = 0;
 	
@@ -158,7 +158,7 @@ static void convolve_tilde_analyze(convolve_tilde *x, t_symbol *arrayName)
     while((x->x_numParts*x->x_window) < x->x_arraySize)
     	x->x_numParts++;
 
-	newNonOverlappedSize = (x->x_numParts+1)*x->x_windowDouble;
+	newNonOverlappedSize = 2*x->x_windowDouble;
     
     // resize time-domain buffer
     // this can probably just be x_windowDouble * 2!!
@@ -364,7 +364,7 @@ static void convolve_tilde_window(convolve_tilde *x, t_float w)
 	// resize time-domain buffer to zero bytes
     x->x_nonOverlappedOutput = (t_sample *)t_resizebytes(
     	x->x_nonOverlappedOutput,
-    	((x->x_numParts+1)*x->x_windowDouble)*sizeof(t_sample),
+    	(2*x->x_windowDouble)*sizeof(t_sample),
     	0
     );
 
@@ -454,7 +454,7 @@ static void convolve_tilde_flush(convolve_tilde *x)
 	if(x->x_numParts>0)
 	{
 		// clear time-domain buffer
-		for(i=0; i<(x->x_numParts+1)*x->x_windowDouble; i++)
+		for(i=0; i<2*x->x_windowDouble; i++)
 			x->x_nonOverlappedOutput[i] = 0.0;
 
 		// clear x_liveFreqDomData
@@ -581,7 +581,7 @@ static void *convolve_tilde_new(t_symbol *s, int argc, t_atom *argv)
  		x->x_invOutFftwOut[i] = 0.0;
 	}	
 
-    post("%s: version 0.11", x->x_objSymbol->s_name);
+    post("%s: version 0.12", x->x_objSymbol->s_name);
     post("%s: partition size %i", x->x_objSymbol->s_name, x->x_window);
 
 	clock_delay(x->x_clock, 0); // wait 0ms before IR analysis to give a control cycle for IR samples to be loaded
@@ -702,11 +702,11 @@ static t_int *convolve_tilde_perform(t_int *w)
 		}
 		
 		// push remaining output buffer contents backwards
-		for(i=0; i<(((numParts+1)*windowDouble)-windowDouble); i++)
+		for(i=0; i<windowDouble; i++)
 			x->x_nonOverlappedOutput[i] = x->x_nonOverlappedOutput[windowDouble+i];
 		
 		// init the newly available chunk at the end
-		for(; i<((numParts+1)*windowDouble); i++)
+		for(; i<(2*windowDouble); i++)
 			x->x_nonOverlappedOutput[i] = 0.0;
  		}
 	};
@@ -767,7 +767,7 @@ static void convolve_tilde_free(convolve_tilde *x)
     {
 	    t_freebytes(
 	    	x->x_nonOverlappedOutput,
-	    	(x->x_numParts+1)*x->x_windowDouble*sizeof(t_sample)
+	    	2*x->x_windowDouble*sizeof(t_sample)
 	    );
 	}
 	else
