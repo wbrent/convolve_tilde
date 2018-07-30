@@ -9,7 +9,7 @@ This program is free software: you can redistribute it and/or modify it under th
 This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-version 0.11, March 17, 2018
+version 0.11.1, July 30, 2018
 
 - using FFTW as of version 0.11
 
@@ -18,6 +18,7 @@ version 0.11, March 17, 2018
 #include "m_pd.h"
 #include "fftw3.h"
 #include <math.h>
+#include <string.h>	// for strcmp
 #define MINWIN 64
 #define DEFAULTWIN 2048
 #define NUMBARKBOUNDS 25
@@ -243,7 +244,7 @@ static void convolve_tilde_eq(convolve_tilde *x, t_symbol *s, int argc, t_atom *
 	fftwf_plan fftwForwardPlan, fftwInversePlan;
 
 	// if no array has been analyzed yet, we can't do the EQ things below
-	if(x->x_arrayName == gensym("NOARRAYSPECIFIED"))
+	if(!strcmp(x->x_arrayName->s_name, "NOARRAYSPECIFIED"))
 		pd_error(x, "%s: no IR array has been analyzed", x->x_objSymbol->s_name);
 	else
 	{
@@ -415,7 +416,7 @@ static void convolve_tilde_window(convolve_tilde *x, t_float w)
 	x->x_dspTick = 0;
 
 	// re-run IR analysis routine, but only IF x->arrayName exists
-	if(x->x_arrayName == gensym("NOARRAYSPECIFIED"))
+	if(!strcmp(x->x_arrayName->s_name, "NOARRAYSPECIFIED"))
 		;
 	else
 		convolve_tilde_analyze(x, x->x_arrayName);
@@ -577,7 +578,7 @@ static void *convolve_tilde_new(t_symbol *s, int argc, t_atom *argv)
  		x->x_invOutFftwOut[i] = 0.0;
 	}	
 
-    post("%s: version 0.11", x->x_objSymbol->s_name);
+    post("%s: version 0.11.1", x->x_objSymbol->s_name);
     post("%s: partition size %i", x->x_objSymbol->s_name, x->x_window);
 
 	clock_delay(x->x_clock, 0); // wait 0ms before IR analysis to give a control cycle for IR samples to be loaded
