@@ -9,11 +9,8 @@ This program is free software: you can redistribute it and/or modify it under th
 This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-<<<<<<< HEAD
-version 0.11.1, July 30, 2018
-=======
-version 0.12, April 18, 2018
->>>>>>> 0ef6fa7543389b2f92c6adba88d756d6b73d63d9
+
+version 0.13, July 30, 2018
 
 - using FFTW as of version 0.11
 
@@ -586,11 +583,7 @@ static void *convolve_tilde_new(t_symbol *s, int argc, t_atom *argv)
  		x->x_invOutFftwOut[i] = 0.0;
 	}	
 
-<<<<<<< HEAD
-    post("%s: version 0.11.1", x->x_objSymbol->s_name);
-=======
-    post("%s: version 0.12", x->x_objSymbol->s_name);
->>>>>>> 0ef6fa7543389b2f92c6adba88d756d6b73d63d9
+    post("%s: version 0.13", x->x_objSymbol->s_name);
     post("%s: partition size %i", x->x_objSymbol->s_name, x->x_window);
 
 	clock_delay(x->x_clock, 0); // wait 0ms before IR analysis to give a control cycle for IR samples to be loaded
