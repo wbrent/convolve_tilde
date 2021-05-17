@@ -1,3 +1,4 @@
 .DS_Store
+audio/.DS_Store
 src/convolve~.o
 convolve~.*
