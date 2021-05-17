@@ -23,7 +23,7 @@ On Linux and Macintosh, the FFTW library files should be installed to /usr/local
 
 make
 
-You must specify the location of your Pure Data source code directory in the Makefile beforehand. Compilation from source on Windows can be done with the same Makefile if you use MinGW: http://www.mingw.org
+Compilation of convolve~ from source on Windows can be done with the same Makefile if you use MinGW: http://www.mingw.org
 
 On Linux and Macintosh, convolve~ will statically link the FFTW library. On Windows, you will either have to set up an environment variable to point to the location of libfftw3f-3.dll, or simply put libfftw3f-3.dll directly in the convolve~ directory.
 
