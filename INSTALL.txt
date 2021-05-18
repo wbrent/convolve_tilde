@@ -24,6 +24,7 @@ sudo make install
 
 On Linux and Macintosh, the FFTW library files should be installed to /usr/local/lib by default.
 
+
 ******** COMPILING CONVOLVE~ FOR LINUX AND MACOS:
 Once FFTW is properly built and installed, you can compile convolve~ using the included Makefile by executing:
 
