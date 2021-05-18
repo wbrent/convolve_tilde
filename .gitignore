@@ -2,3 +2,4 @@
 audio/.DS_Store
 src/convolve~.o
 convolve~.*
+libfftw3f-3.dll
